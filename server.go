@@ -10,61 +10,59 @@ import (
 //go:embed index.html
 var content embed.FS
 
-type status int
+type status string
 
 const (
-	TODO status = 0
-	DONE status = 1
-	WAIT status = 2
+	Todo status = "TODO"
+	Done status = "DONE"
+	Wait status = "WAIT"
 )
 
-type Todo struct {
+type TodoItem struct {
 	Description string
-	Done        status
+	Status      status
 }
 
-func (t *Todo) mark_done() {
-	switch t.Done {
-	case TODO:
-		t.Done = DONE
-	case DONE:
-		t.Done = WAIT
-	case WAIT:
-		t.Done = TODO
+func (t *TodoItem) markDone() {
+	switch t.Status {
+	case Todo:
+		t.Status = Done
+	case Done:
+		t.Status = Wait
+	case Wait:
+		t.Status = Todo
 	}
 }
 
-var todos []Todo
+var todoList []TodoItem
+
+func getValue(r *http.Request, value string) string {
+	err := r.ParseForm()
+	if err != nil {
+		panic(err)
+	}
+	return r.FormValue(value)
+
+}
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	tpl := template.Must(template.ParseFS(content, "index.html"))
-	tpl.Execute(w, todos)
+	tpl.Execute(w, todoList)
 }
 
 func addHandler(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-
-	if err != nil {
-		fmt.Fprintf(w, "ParseForm() err: %v", err)
-		return
-	}
-	item := r.FormValue("item")
-	todo := Todo{item, TODO}
-	todos = append(todos, todo)
+	item := getValue(r, "description")
+	newItem := TodoItem{item, Todo}
+	todoList = append(todoList, newItem)
 	http.Redirect(w, r, "/", 303)
 	http.Get("/")
 }
 
 func toggleHandler(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		fmt.Fprintf(w, "ParseForm() err: %v", err)
-		return
-	}
-	item := r.FormValue("todoitem")
-	for i, v := range todos {
+	item := getValue(r, "description")
+	for i, v := range todoList {
 		if v.Description == item {
-			todos[i].mark_done()
+			todoList[i].markDone()
 		}
 	}
 	http.Redirect(w, r, "/", 303)
@@ -72,7 +70,6 @@ func toggleHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.FS(content)
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/add", addHandler)
 	http.HandleFunc("/toggle", toggleHandler)

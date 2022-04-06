@@ -2,24 +2,23 @@
 
 <body>
     <form action="/add" method="post">
-        <input type="text" id="item" name="item" autofocus>
+        <input type="text" id="item" name="description" autofocus>
         <button type="submit"> Send </button>
     </form>
     <table>
         {{ range . }}
         <tr>
             <form action="/toggle" method="post">
-            {{ if eq (.Done) (0) }}
-                <td><button name=todoitem value={{.Description}}> TODO </button></td>
+               <td><button name="description" value={{.Description}}> {{.Status}} </button></td>
+
+            {{ if eq (.Status) ("TODO") }}
                 <td>{{.Description}}</td>
             {{ end }} 
-            {{ if eq (.Done) (1) }}
-                <td><button name=todoitem value={{.Description}}> DONE </button></td>
+            {{ if eq (.Status) ("DONE") }}
                 <td><strike>{{.Description}}</strike></td>
             {{ end }} 
-            {{ if eq (.Done) (2) }}
-                <td><button name=todoitem value={{.Description}}> WAIT </button></td>
-                <td>{{.Description}}</td>
+            {{ if eq (.Status) ("WAIT") }}
+                <td><i>{{.Description}}</i></td>
             {{ end }} 
             </form>
         </tr>
