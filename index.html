@@ -1,3 +1,9 @@
+<style>
+    form {float: left;}
+    div.resultContainer .hidden {display: none;}
+    div.resultContainer:hover .hidden {display: inline;}
+</style>
+
 <h1>TODO List</h1>
 
 <body>
@@ -5,23 +11,39 @@
         <input type="text" id="item" name="description" autofocus>
         <button type="submit"> Send </button>
     </form>
-    <table>
-        {{ range . }}
-        <tr>
-            <form action="/toggle" method="post">
-               <td><button name="description" value={{.Description}}> {{.Status}} </button></td>
+        <br/>
 
+        {{ range . }}
+        <br/>
+            <form action="/toggle" method="post">
+               <span style="width:{{.Depth}}px;display:inline-block;"></span>
+               <button name="description" value={{.ID}}> {{.Status}} </button>
             {{ if eq (.Status) ("TODO") }}
-                <td>{{.Description}}</td>
+                <span>{{.Title}}&nbsp</span>
             {{ end }} 
             {{ if eq (.Status) ("DONE") }}
-                <td><strike>{{.Description}}</strike></td>
+                <strike>{{.Title}}&nbsp</strike>
             {{ end }} 
             {{ if eq (.Status) ("WAIT") }}
-                <td><i>{{.Description}}</i></td>
+                <i>{{.Title}}&nbsp</i>
             {{ end }} 
             </form>
-        </tr>
+            <div class='resultContainer'>
+              &nbsp
+            <div class='hidden'>
+                <form action="/indentLeft", method="post">
+                    <button name="description" value={{.ID}}><</button>
+                </form>
+                <form action="/moveUp", method="post">
+                    <button name="description" value={{.ID}}>^</button>
+                </form>
+                <form action="/moveDown", method="post">
+                    <button name="description" value={{.ID}}>v</button>
+                </form>
+                <form action="/indentRight", method="post">
+                    <button name="description" value={{.ID}}>></button>
+                </form>
+            </div>
+            </div>
         {{end}}
-  </table>
 </body>
