@@ -28,29 +28,6 @@ func TestIndexHandler(t *testing.T) {
 	}
 }
 
-func TestAddHandler(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/add", nil)
-	w := httptest.NewRecorder()
-	addHandler(w, req)
-	res := w.Result()
-	defer res.Body.Close()
-
-	if res.StatusCode != 303 {
-		t.Errorf("Expected %v, got %v", 303, res.StatusCode)
-	}
-}
-
-func TestToggleHandler(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/add", nil)
-	w := httptest.NewRecorder()
-	toggleHandler(w, req)
-	res := w.Result()
-	defer res.Body.Close()
-
-	if res.StatusCode != 303 {
-		t.Errorf("Expected %v, got %v", 303, res.StatusCode)
-	}
-}
 
 func BenchmarkIndex(b *testing.B) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -62,19 +39,28 @@ func BenchmarkIndex(b *testing.B) {
 }
 
 func BenchmarkAdd(b *testing.B) {
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	w := httptest.NewRecorder()
-	for i := 0; i < b.N; i++ {
-		addHandler(w, req)
-
+	for i := 0; i<b.N; i++ {
+		add("item")
 	}
 }
+
 
 func BenchmarkToggle(b *testing.B) {
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	w := httptest.NewRecorder()
-	for i := 0; i < b.N; i++ {
-		addHandler(w, req)
-
+	for i := 0; i<b.N; i++ {
+		toggle("item")
 	}
 }
+
+
+func BenchmarkIndent(b *testing.B) {
+	for i := 0; i<b.N; i++ {
+		indent(i)("item")
+	}
+}
+
+func BenchmarkOrder(b *testing.B) {
+	for i := 0; i<b.N; i++ {
+		order(-1)("item")
+	}
+}
+

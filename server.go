@@ -55,12 +55,14 @@ func getValue(r *http.Request, value string) string {
 
 }
 
-func parseString(input string) TodoItem {
-	ID := string(len(todoList)+1)
-	trimmedString := strings.TrimLeft(input, " ")
-	leadingSpaces := len(input) - len(trimmedString)
-	newItem := TodoItem{ID, trimmedString, Todo, leadingSpaces * 40}
-	return newItem
+func handle(action func(string)) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		item := getValue(r, "description")
+		action(item)
+		http.Redirect(w, r, "/", 303)
+		http.Get("/")
+	}
+
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -68,40 +70,38 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	tpl.Execute(w, todoList)
 }
 
-func addHandler(w http.ResponseWriter, r *http.Request) {
-	item := getValue(r, "description")
-	todoList = append(todoList, parseString(item))
-	http.Redirect(w, r, "/", 303)
-	http.Get("/")
+func todoItemFromString(input string) TodoItem {
+	ID := fmt.Sprint(len(todoList) + 1)
+	trimmedString := strings.TrimLeft(input, " ")
+	leadingSpaces := len(input) - len(trimmedString)
+	newItem := TodoItem{ID, trimmedString, Todo, leadingSpaces * 40}
+	return newItem
 }
 
-func toggleHandler(w http.ResponseWriter, r *http.Request) {
-	item := getValue(r, "description")
+func add(item string) {
+	todoList = append(todoList, todoItemFromString(item))
+}
+
+func toggle(item string) {
 	for i, v := range todoList {
 		if v.ID == item {
 			todoList[i].markDone()
 		}
 	}
-	http.Redirect(w, r, "/", 303)
-	http.Get("/")
 }
 
-func indent(indentAmount int) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		item := getValue(r, "description")
+func indent(indentAmount int) func(string) {
+	return func(item string) {
 		for i, v := range todoList {
 			if v.ID == item {
 				todoList[i].indent(indentAmount)
 			}
 		}
-		http.Redirect(w, r, "/", 303)
-		http.Get("/")
 	}
 }
 
-func order(upOrDown int) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		item := getValue(r, "description")
+func order(upOrDown int) func(string) {
+	return func(item string) {
 		todoListCopy := make([]TodoItem, len(todoList))
 		copy(todoListCopy, todoList)
 		for i, v := range todoListCopy {
@@ -119,19 +119,17 @@ func order(upOrDown int) func(w http.ResponseWriter, r *http.Request) {
 			}
 
 		}
-		http.Redirect(w, r, "/", 303)
-		http.Get("/")
 	}
 }
 
 func main() {
 	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/add", addHandler)
-	http.HandleFunc("/toggle", toggleHandler)
-	http.HandleFunc("/indentRight", indent(40))
-	http.HandleFunc("/indentLeft", indent(-40))
-	http.HandleFunc("/moveUp", order(-1))
-	http.HandleFunc("/moveDown", order(1))
+	http.HandleFunc("/add", handle(add))
+	http.HandleFunc("/toggle", handle(toggle))
+	http.HandleFunc("/indentRight", handle(indent(40)))
+	http.HandleFunc("/indentLeft", handle(indent(-40)))
+	http.HandleFunc("/moveUp", handle(order(-1)))
+	http.HandleFunc("/moveDown", handle(order(1)))
 	fmt.Println("Serving on 8100")
 	http.ListenAndServe(":8100", nil)
 }
